@@ -1,0 +1,146 @@
+Pawe³ Salicki gr 2 sem 4 2018/2019 Inf SSI Sekcja 4
+Sprawozdanie MsAccess
+Data odbytych æwiczeñ: 14.05.2019r
+
+MS Access - zestaw zadañ 2
+
+
+//Zadanie 5
+
+Private Sub Form_Open(Cancel As Integer)
+
+Dim db As DAO.Database
+Dim rs As DAO.Recordset
+Dim LiczbaWyplat As Integer
+Dim SredniaWyplat As Single
+Dim SumaWyplat As Single
+
+Set db = CurrentDb
+Set rs = Me.RecordsetClone
+
+rs.MoveFirst
+Do Until rs.EOF
+LiczbaWyplat = LiczbaWyplat + 1
+SumaWyplat = SumaWyplat + rs!KWOTA
+rs.MoveNext
+Loop
+
+SredniaWyplat = SumaWyplat / LiczbaWyplat
+
+SredniaWyp = SredniaWyplat
+LiczbaWyp = LiczbaWyplat
+
+End Sub
+
+
+
+Private Sub SzukajBtn_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+Dim rs As DAO.Recordset
+Dim kryterium As String
+Dim zakladka As String
+
+Set rs = Me.RecordsetClone
+
+rs.Bookmark = Me.Bookmark
+zakladka = rs.Bookmark
+
+kryterium = "NAZWISKO = '" & WarunekWys & "'"
+
+rs.FindFirst kryterium
+If rs.NoMatch Then
+    rs.Bookmark = zakladka
+    MsgBox "Nie znaleziono"
+Else
+    MsgBox "Znaleziono"
+End If
+
+rs.Close
+
+End Sub
+
+
+//Zadanie 6
+
+Private Sub Form_Current()
+
+Dim rs As DAO.Recordset
+Dim wyp As DAO.Recordset
+Dim db As DAO.Database
+Dim liczba As Integer
+Dim wieksze As Single
+Dim suma As Single
+Dim srednia As Single
+
+Set rs = Me.RecordsetClone
+Set db = CurrentDb
+Set wyp = db.OpenRecordset("WYPLATY", dbOpenSnapshot)
+
+Dim kryterium As String
+kryterium = "NR_PRAC  = " & Me.NR_PRAC
+
+wyp.FindFirst kryterium
+Do Until wyp.NoMatch
+     liczba = liczba + 1
+     suma = suma + wyp!KWOTA
+
+     If wyp!KWOTA > 1000 Then
+          wieksze = wieksze + 1
+     End If
+
+     wyp.FindNext kryterium
+Loop
+
+LiczbaWyplTekst = liczba
+SumaWyplTekst = suma
+
+If Not liczba = 0 Then
+     srednia = suma / liczba
+End If
+
+SredniaWyplTekst = srednia
+LiczbaWyplTysTekst = wieksze
+
+End Sub
+
+
+//Zadanie 7
+
+
+Private Sub Form_Open(Cancel As Integer)
+
+Dim pracownicy, wyplaty As Recordset
+Set pracownicy = CurrentDb.OpenRecordset("Pracownicy", dbOpenSnapshot)
+Set wyplaty = CurrentDb.OpenRecordset("Wyplaty", dbOpenSnapshot)
+
+Dim kryterium1, kryterium2 As String
+Dim maWyplate As Boolean
+Dim liczbaPrac As Integer
+Dim bezWyplaty As Integer
+Dim liczbaWyplat As Integer
+
+pracownicy.MoveFirst
+Do Until pracownicy.EOF
+    liczbaPrac = liczbaPrac + 1
+    maWyplate = False
+    kryterium1 = "NR_PRAC = " & pracownicy!NR_PRAC
+    
+    wyplaty.FindFirst kryterium1
+    Do Until wyplaty.NoMatch Or maWyplate
+        kryterium2 = "NR_PRAC = " & wyplaty!NR_PRAC
+        If kryterium2 = kryterium1 Then
+            If wyplaty!KWOTA > 0 Then
+                maWyplate = True
+                liczbaWyplat = liczbaWyplat + 1
+            End If
+        End If
+        wyplaty.FindNext kryterium1
+    Loop
+pracownicy.MoveNext
+Loop
+
+bezWyplaty = liczbaPrac - liczbaWyplat
+
+PracownicyBezWyplTekst = bezWyplaty
+    
+End Sub

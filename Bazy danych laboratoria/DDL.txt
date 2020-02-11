@@ -1,0 +1,206 @@
+Pawe³ Salicki gr2 Sekcja 4 23.05.2019
+Sprawozdanie DDL
+
+-- 2. Utworzyæ nowe tabele zesp1 oraz prac1 tak, by spe³nione by³y nastêpuj¹ce warunki: (w instrukcji)
+
+CREATE TABLE zesp1
+(nr_zesp smallint (6) PRIMARY KEY,
+nazwa_zesp char (30),
+nr_prac_kz int (11),
+nr_inst smallint (6))
+ENGINE = INNOBD;
+
+CREATE TABLE prac1 
+(nr_prac int(11) PRIMARY KEY,
+plec char(1) NOT NULL,
+data_ur datetime,
+nazwisko char(15),
+Nr_zesp smallint(6))
+ENGINE=INNOBD;
+
+CREATE INDEX index_prac1 ON prac1 (nr_zesp);
+
+-- 3. Wpisywanie danych do tabel (polecenie z instrukcji)
+
+INSERT INTO zesp1
+SELECT * FROM zespoly;
+
+INSERT INTO prac1
+SELECT * FROM pracownicy;
+
+--4. Tak zmodyfikowaæ tabele, by: (dalsze polecenie w instrukcji)
+
+ALTER TABLE zesp1
+ADD FOREIGN KEY(nr_prac_kz)
+REFERENCES prac1(nr_prac)
+ON DELETE RESTRICT;
+
+ALTER TABLE prac1
+ADD FOREIGN KEY(nr_zesp)
+REFERENCES zesp1(nr_zesp)
+ON DELETE SET NULL;
+
+SELECT *FROM zesp1;
+
+SELECT * FROM prac1;
+
+--Zadanie 5
+-- Wykonaæ æwiczenie sprawdzaj¹ce poprawnoœæ dzia³ania wiêzów referencyjnych, pod k¹tem wprowadzania wartoœci --pustych, powtarzaj¹cych siê wartoœci oraz kasowania wierszy maj¹cych swych odpowiedników w tabelach podrzêdnych --oraz dokonywania zmian wartoœci. 
+ 
+--Wstawianie wartosci
+INSERT INTO zesp1(nr_zesp) VALUES(10) -- operacja nie pozwiodla sie, duplikaty typu primary key
+INSERT INTO prac1(nr_prac) VALUES(13) -- operacja nie pozwiodla sie, duplikaty typu primary key
+
+--Wartosci puste
+INSERT INTO prac1 VALUES(210, NULL, NULL, 'KRZYSZTOF', NULL); -- plec cannot be NULL
+INSERT INTO zesp1 VALUES(NULL, 'TEST', 54, NULL); --klucz glowny cannot be NULL
+
+INSERT INTO prac1 VALUES(543, 'K', NULL, 'TALMARA', NULL); -- dziala bo nie ma ograniczen na NOT NULL
+INSERT INTO zesp1 VALUES(234, 'ABC', NULL, NULL , NULL); -- column count doesn't match value at row 1
+
+--Wartosci powtazajace sie
+INSERT INTO prac1 VALUES (210, 'M', NULL, 'PAWEL', 4); -- zapytanie wykonalo sie, bo nr zespolu moze sie powtarzac
+INSERT INTO zesp1 VALUES(224, 'ABC', 54, 435); -- zapytanie wykonuje sie, nr pracownika moze sie powtarzac
+
+--Usuwanie rekordow tablicy
+DELETE FROM prac1 WHERE nr_prac = 10; -- cannot delete or update  a parent row, a foreign key constraint fails
+--powiazanie typu RESTRICT
+
+DELETE FROM prac1 WHERE nr_prac = 2 -- próba usuniecia powiod³a siê
+DELETE FROM zesp1 WHERE nr_zesp = 4; -- w tabeli prac1 wpisano wartosc NULL
+DELETE FROM zesp1 WHERE nazwa_zesp = 'PIECE'; -- w tabeli zesp1 rekord zostal usuniety
+
+--Dokonywanie zmian w tabelach (zmiana wartosci)
+UPDATE prac1 SET nr_prac = 500 WHERE nr_prac = 2; -- Cannot delete or update a parent row, a foreign key consstraint --fails
+--powiazanie typu RESTRICT
+
+UPDATE zesp1 SET nr_zesp = 400 where nr_zesp = 1; -- Cannot delete or update a parent row, a foreign key constraint --fails
+--powiazanie typu RESTRICT
+
+UPDATE prac1 set nr_prac = 77 WHERE nr_prac = 6 -- operacja powiodla sie, bo mo¿liwe jest edytowanie informacji --zdefiniowanych jako klucz obcy w tabeli zesp1
+
+UPDATE zesp1 set nr_prac_kz = 5 WHERE nr_zesp = 4 -- operacja powiodla sie, bo mo¿liwe jest edytowanie informacji --zdefiniowanych jako klucz obcy w tabeli zesp1
+
+--6 Tworzenie u¿ytkowników i przydzielanie im uprawnieñ: 
+--Pod³¹czyæ siê do bazy labbdX jako u¿ytkownik adminX z has³em adminX 
+
+--jako adminx: utworzyæ u¿ytkownika userX i nadaæ mu uprawnienia do przegl¹dania tabeli pracownicy 
+
+CREATE USER 'userX'@'localhost' IDENTIFIED BY 'userX' -- utworzenie uzytkownika
+GRANT SELECT ON uczelnia.pracownicy TO 'userX' -- nadanie uprawnien
+
+--jako userX: Obejrzeæ rekordy w tabeli pracownicy Usun¹æ rekordy z tabeli pracownicy Obejrzeæ rekordy w tabeli ----tematy 
+
+SELECT * FROM pracownicy; -- pokazanie rekordow dziala
+DELETE FROM pracownicy WHERE nr_prac = 5; --DELETE command denied to user
+--'userX'@'localhost' for table 'pracownicy'
+--uzytkownik nie ma uprawnien do usuniecia danych
+
+SELECT * FROM tematy; --uzytkownik nie ma uprawnien do obejrzenia tabeli tematy
+
+--jako adminX: Nadaæ u¿ytkownikowi userX prawo do usuwania rekordów w tabeli zespo³y 
+
+GRANT DELETE ON uczelnia.zespoly TO 'userX'; --nadanie uprawnien uzytkownikowi
+
+--jako userX: Obejrzeæ rekordy w tabeli zespoly Usun¹æ zespo³ nr 1 Co siê sta³o i dlaczego? 
+ 
+SELECT * FROM zespoly; --nie dziala, brak uprawnien do obejrzenia tabeli zespoly
+DELETE FROM zespoly WHERE nr_zesp=1 -- blad, nie dziala, brak uprawnien
+
+--Co sie stalo i dlaczego?
+--Nie ma mozliwosci obejrzenia rekordow z tabeli zespoly, bo nie uzytkownik
+--nie posiada uprawnien, tak samo z powodu braku uprawnien nie mozna usunac
+--rekordu o nr_zesp = 1
+
+--jako adminX: Nadaæ u¿ytkownikowi userX prawo do przegl¹dania tabeli zespo³y 
+
+GRANT SELECT ON uczelnia.zespoly TO 'userX'; -- nadani uprawnien uzytkownikowi, by mogl obejrzec tabele zespoly
+
+--jako userX: Usun¹æ zespo³ nr 1 Co siê sta³o i dlaczego? 
+
+DELETE FROM zespoly WHERE nr_zesp=1; --operacja usuniecia rekordu powiodla sie
+
+--Co sie stalo i dlaczego?
+--Usunieto zespol nr 1, dzieki nadaniu uzytkownikowi przez admina uprawnien.
+
+--jako adminX: Utworzyæ perspektywê stud zawieraj¹c¹ numery i nazwiska studentów kierunku 'Informatyka' Nadaæ ----u¿ytkownikowi userX prawo do przegl¹dania perspektywy stud 
+
+
+CREATE VIEW stud AS SELECT NR_STUD, NAZWISKO
+FROM studenci S
+JOIN kierunki K
+ON S.NR_KIER = K.NR_KIER
+WHERE nazwa_kier = 'INFORMATYKA';
+-- utworzono perspektywe
+
+GRANT SELECT ON uczelnia.stud TO 'userX'; -- nadanie uzytkownikowi uprawnien  do przegladania perspektywy stud
+
+--jako userX: Obejrzeæ rekordy w tabeli/widoku stud Obejrzeæ rekordy w tabeli studenci Zmieniæ nazwisko studenta --TUREK na GREK Co siê sta³o i dlaczego? 
+
+SELECT * FROM stud; -- operacja powiodla sie, uzytkownik po otrzymanym dostepie moze wyswietlic tabele dzieki --perspektywie
+
+SELECT * FROM studenci; -- brak uprawnien do odczytania zawartosci tabele
+
+UPDATE studenci SET nazwisko ='GREK' WHERE nazwisko='TUREK'; -- operacja zamiany nie powiodla sie
+
+--Co sie stalo i dlaczego?
+--Uzytkownik nie ma uprawnien do przegladania tabeli studenci
+
+--jako adminX: Nadaæ u¿ytkownikowi userX prawo do modyfikowania danych w perspektywie stud 
+
+GRANT SELECT ON uczelnia.stud TO 'userX'@'localhost'; -- nadanie prawa uzytkownikowi do modyfikowania danych w --perspektywie stud
+
+--jako userX: Zmieniæ nazwisko studenta TUREK na GREK Co siê sta³o i dlaczego? 
+ 
+UPDATE studenci SET nazwisko ='GREK' WHERE nazwisko='TUREK'; -- dalej brak dostepu do aktualizacji tabeli studenci
+
+--jako adminX: Zmieniæ nazwisko studenta TUREK na GREK u¿ywaj¹c perspektywy stud Co siê sta³o i dlaczego? 
+ 
+UPDATE stud SET nazwisko ='GREK' WHERE nazwisko='TUREK';
+--Uda³o siê zmieniæ nazwisko, poniewa¿ adminX ma prawo do zmiany danych zawartych w perspektywie
+
+--Utworzyæ perspektywê stud2:Wypisuj¹c¹ nazwiska studentów. Zmieniæ nazwisko studenta TUREK na GREK u¿ywaj¹c ----perspektywy stud2 Co siê sta³o i dlaczego? Nadaæ u¿ytkownikowi userX prawo do ogl¹dania i modyfikacji perspektywy --stud2 
+
+CREATE VIEW stud2 AS
+SELECT NAZWISKO
+FROM studenci;
+--utworzono nowa perspektye zglodnie z poleceniem zadania
+
+UPDATE stud2 SET nazwisko ='GREK' WHERE nazwisko='TUREK';
+--Nazwisko Turek zosta³o zmienione na Grek w stud2.
+
+GRANT UPDATE ON uczelnia.stud2 to 'userX'@'localhost';
+GRANT SELECT ON uczelnia.stud2 to 'userX'@'localhost';
+--nadano uzytkownikowi prawo do ogladania i modyfikacji perspektywy stud2
+
+--jako userX: Zmieniæ nazwisko studenta GREK na TUREK u¿ywaj¹c perspektywy stud2 Co siê sta³o i dlaczego? 
+
+UPDATE stud2 SET nazwisko='TUREK' WHERE nazwisko='GREK';
+--Nazwisko za pomoca perspektywy zostalo zmienione, poniewaz admin nadal uzytkownikowi takie uprawnienie.
+
+--jako adminX: Utworzyæ u¿ytkownika pomX Nadaæ u¿ytkownikowi pomX prawo do przegl¹dania tabeli przedmioty 
+
+CREATE USER 'pomX'@'localhost'; --utworzono uzytkownika
+GRANT SELECT ON przedmioty TO 'pomX'@'localhost'; --nadano nowemu uzytkownikowi prawa do przegladania tabeli przedmioty
+
+--jako pomX: Obejrzeæ rekordy w tabeli przedmioty Nadaæ u¿ytkownikowi userX prawo do przegl¹dania tabeli przedmioty --Co siê sta³o i dlaczego? 
+
+GRANT SELECT ON przedmioty TO 'userX'@'localhost';
+
+SELECT * FROM przedmioty; --uzytkownik pomX moze wyswietlic tabele przedmioty
+
+--Nie jest mo¿liwe nadanie u¿ytkownikowi userX prawa do przegl¹dania, 
+--poniewa¿ u¿ytkownik pomX nie posiada takich uprawnieñ. 
+
+--jako adminX: Nadaæ u¿ytkownikowi pomX prawo do przegl¹dania tabeli przedmioty z mo¿liwoœci¹ delegacji praw (WITH --GRANT OPTION) 
+
+GRANT SELECT ON przedmioty TO 'pomX'@'localhost' WITH GRANT OPTION; --nadanie nowych uprawnien
+
+--jako pomX: Nadaæ u¿ytkownikowi userX prawo do przegl¹dania tabeli przedmioty Co siê sta³o i dlaczego? 
+
+GRANT SELECT ON przedmioty TO 'userX'@'localhost' ; -- nadano uprawnienia
+
+--jako userX: Obejrzeæ rekordy w tabeli przedmioty 
+
+SELECT * FROM przedmioty --uzytkownik moze wyswietlic rekordy tablicy
+

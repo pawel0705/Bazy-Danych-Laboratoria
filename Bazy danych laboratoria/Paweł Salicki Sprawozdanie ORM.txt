@@ -1,0 +1,440 @@
+Pawe³ Salicki
+Sprawozdanie ORM
+SSI Inf sem 4
+gr2 sekcja 4
+
+--JDBC
+
+//@ TODO: implementacja
+
+//FUNKCJA 1
+
+@Override
+    public List<Client> getClients(String name) {
+        // Zaimplementowaæ pobieranie z bazy klientów wed³ug nazwy.
+        // Znak '_' zastêpuje dowolny znak we wzorcu,
+        // znak '%' zastêpuje dowolny ci¹g znaków we wzorcu
+        // (wykorzystaæ operator LIKE).
+        // Wartoœæ null w miejscu kryterium powoduje, ze nie jest ono brane pod uwagê.
+        // Przyk³ady:
+        //   * wywo³anie getClients(null) ma zwróciæ wszystkich klientów
+        //   * wywo³anie getClients("A%") ma zwróciæ wszystkich klientów, 
+        //	   których nazwy zaczynaj¹ siê na literê 'A'
+
+        //TODO: Implementacja
+    	 final List<Client> clients = new ArrayList<Client>();
+         if(name == null) name = "%";
+         String query = "SELECT ID, CLIENT_NO, NAME, SSN, ADDRESS FROM CLIENTS WHERE NAME LIKE '" + name + "'";
+         Connection con = null;
+         Statement stmt = null;
+         try {
+             con = JdbcUtils.getConnection();
+             stmt = con.createStatement();
+             final ResultSet resultSet = stmt.executeQuery(query);
+             while (resultSet.next()) {
+                 final Client client = readClient(resultSet);
+                 clients.add(client);
+             }
+         } catch (SQLException ex) {
+             JdbcUtils.handleSqlException(ex);
+         } finally {
+             JdbcUtils.closeSilently(stmt, con);
+         }
+         return clients;
+    }
+
+//FUNKCJA 2
+
+    @Override
+    public void insertClients(List<Client> clients) {
+        // Zaimplementowaæ wstawianie do bazy podanej listy klientów.
+        // Wstawianie wszystkich klientów ma byæ przeprowadzone w ramach jednej transakcji.
+        // Proszê wykorzystaæ polecenia prekompilowane.
+
+    	//TODO: Implementacja
+    	Connection con = null;
+        PreparedStatement preparedStatement = null; // polecenie prekompilowane    
+        try {
+            con = JdbcUtils.getConnection();
+            con.setAutoCommit(false);
+            preparedStatement = con.prepareStatement("INSERT INTO CLIENTS(ID, CLIENT_NO, NAME, SSN, ADDRESS) VALUES (?, ?, ?, ?, ?)");
+            for(Client cln: clients){
+                preparedStatement.setInt(1, cln.getId());
+                preparedStatement.setInt(2, cln.getNo());
+                preparedStatement.setString(3, cln.getName());
+                preparedStatement.setString(4, cln.getSsn());
+                preparedStatement.setString(5, cln.getAddress());
+                preparedStatement.executeUpdate();
+            }
+            con.commit();
+        } catch (SQLException ex) {
+            JdbcUtils.handleSqlException(ex);
+        } finally {
+            JdbcUtils.closeSilently(preparedStatement, con);
+        }
+    }
+
+//FUNKCJA 3
+
+    @Override
+    public void updateClient(Client client) {
+        // Zaimplementowaæ aktualizacjê danych podanego klienta w bazie.	
+
+        //TODO: Implementacja
+    	 Connection con = null;
+         PreparedStatement preparedStatement = null; // polecenie prekompilowane    
+         try {
+             con = JdbcUtils.getConnection();
+             preparedStatement = con.prepareStatement("UPDATE CLIENTS SET ID = ?, CLIENT_NO = ?, NAME = ?, SSN = ?, ADDRESS = ? WHERE ID = ?");
+             preparedStatement.setInt(1, client.getId());
+             preparedStatement.setInt(6, client.getId());
+             preparedStatement.setInt(2, client.getNo());
+             preparedStatement.setString(3, client.getName());
+             preparedStatement.setString(4, client.getSsn());
+             preparedStatement.setString(5, client.getAddress());
+             preparedStatement.executeUpdate();
+         } catch (SQLException ex) {
+             JdbcUtils.handleSqlException(ex);
+         } finally {
+             JdbcUtils.closeSilently(preparedStatement, con);
+         }
+    }
+
+--ORM
+
+//Client po modyfikacjach
+
+package pl.polsl.zti.db1.domain;
+
+import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.persistence.*;
+
+@Entity
+@Table(name="CLIENTS")
+public class Client implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+    private int id;
+    private int no;
+    private String name;
+    private String ssn;
+    private String address;
+    
+    private Set<Order> orders = new HashSet<Order>(0);
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    public int getId() {
+        return this.id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+    @Column(name = "CLIENT_NO")
+    public int getNo() {
+        return this.no;
+    }
+
+    public void setNo(int no) {
+        this.no = no;
+    }
+    @Column(name = "NAME")
+    public String getName() {
+        return this.name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+    @Column(name = "SSN")
+    public String getSsn() {
+        return this.ssn;
+    }
+
+    public void setSsn(String ssn) {
+        this.ssn = ssn;
+    }
+    @Column(name = "ADDRESS")
+    public String getAddress() {
+        return this.address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+    
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, mappedBy = "client")
+    public Set<Order> getOrders() {
+    	return this.orders;
+    }
+    public void setOrders(Set<Order> orders) {
+    	this.orders = orders;
+    }
+}
+
+//Opis adnotacji z instrukcji:
+@Id - klucz g³ówny, adnotacja przed Getterem pola Id
+@Table - informacja o tablicy przechowuj¹cej obiekty klienta
+@GeneratedValue - "auto increment" automatyczne przypisywanie klucza g³ównego
+@Column - nazwa kolumny w bazie odpowiadaj¹cej w³aœciwoœci w klasie
+@Entity - encja mapowana do Ÿród³a danych
+
+
+
+//Uzupelnienie TO DO
+
+//FUNKCJA 1
+
+    @Override
+    public void insertClients(List<Client> clients) {
+        //TODO Implementacja
+
+    	final EntityManager entityManager = ENTITY_MANAGER_FACTORY.createEntityManager();
+    	final EntityTransaction transaction = entityManager.getTransaction();
+    	transaction.begin();
+    	for(int i =0;i<clients.size();++i){
+    		entityManager.persist(clients.get(i)); 	
+    }
+   transaction.commit();
+   entityManager.close();
+    }
+
+//FUNKCJA 2
+
+    @Override
+    public void updateClient(Client client) {
+        //TODO Implementacja
+    	final EntityManager entityManager = ENTITY_MANAGER_FACTORY.createEntityManager();
+    	final EntityTransaction transaction = entityManager.getTransaction();
+    	transaction.begin();
+    	final Client managedClient = entityManager.find(Client.class,client.getId());
+    	managedClient.setName(client.getName());
+    	managedClient.setNo(client.getNo());
+    	managedClient.setAddress(client.getAddress());
+    	managedClient.setSsn(client.getSsn());
+    	
+    	transaction.commit();
+    	entityManager.close();
+    }
+
+//FUNKCJA 3
+
+    @Override
+    public void deleteClient(int id) {
+        // Zaimplementowaæ usuwanie klienta o podanym id
+        // Najpierw wydobyæ klienta, potem go usun¹æ
+
+    	//TODO Implementacja
+    	 final EntityManager entityManager = ENTITY_MANAGER_FACTORY.createEntityManager();
+         final EntityTransaction transaction = entityManager.getTransaction();
+         transaction.begin();
+         final Client managedClient = entityManager.find(Client.class, id);
+        entityManager.remove(managedClient);
+
+         transaction.commit();
+         entityManager.close();
+    }
+
+--Zwi¹zki
+
+//Uzupe³nienie klasy Order
+
+package pl.polsl.zti.db1.domain;
+
+import java.io.Serializable;
+import java.util.Date;
+import javax.persistence.*;
+
+@Entity
+@Table(name="ORDERS")
+public class Order implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+    private int id;
+    private String no;
+    private Client client;
+    private Date date;
+    private String description;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+    @Column(name = "ORDER_NO")
+    public String getNo() {
+        return no;
+    }
+
+    public void setNo(String no) {
+        this.no = no;
+    }
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "CLIENT_ID", nullable = false)
+    public Client getClient() {
+        return client;
+    }
+
+    public void setClient(Client client) {
+        this.client = client;
+    }
+    @Column (name = "ORDER_DATE")
+    @Temporal(TemporalType.DATE)
+    public Date getDate() {
+        return date;
+    }
+
+    public void setDate(Date date) {
+        this.date = date;
+    }
+    @Column (name = "ORDER_DESC")
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+}
+
+    @Test
+    public void TestA(){
+    	 final EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory(ConfigConsts.PERSISTANCE_UNIT_NAME);
+         final EntityManager entityManager = entityManagerFactory.createEntityManager();
+         
+         final EntityTransaction transaction = entityManager.getTransaction();
+         transaction.begin();
+         
+         Client client = entityManager.find(Client.class, 1); // szukaj klienta o id=1
+         Set<Order> orders = client.getOrders(); //zamowienia
+         long size = orders.size();
+         
+         transaction.commit();
+         entityManager.close();
+         
+         long countOrder = (Long) JdbcUtils.executeScalar("SELECT COUNT(*) FROM ORDERS WHERE CLIENT_ID = 1");
+         assertEquals("Blad. Klient nie zosta³ zapisany.", size, countOrder);
+    }
+
+//WPLYW EAGER I LAZY
+//Parametry te ustawiane sa w klasach Client i Order
+@OneToMany (cascade = CascadeType.ALL, fetch  = FetchType.LAZY, mappedBy = "client")
+//dla LAZY ponizszy test nie przechodzi
+//dla EAGER - test przechodzi
+
+@Test
+    public void TestBCD(){
+   	final EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory(ConfigConsts.PERSISTANCE_UNIT_NAME);
+        final EntityManager entityManager = entityManagerFactory.createEntityManager();
+        
+        final EntityTransaction transaction = entityManager.getTransaction();
+        transaction.begin();
+        
+        Client client = entityManager.find(Client.class, 1);
+        
+        transaction.commit();
+        entityManager.close();
+        
+        Set<Order> orders = client.getOrders();
+        long size = orders.size();
+        
+        long countOrder = (Long) JdbcUtils.executeScalar("SELECT COUNT(*) FROM ORDERS WHERE CLIENT_ID = 1");
+        assertEquals("Blad. Klient nie zosta³ zapisany", size, countOrder);
+   }
+
+//WPLYW CascadeType.ALL
+//Kaskada ta, powoduje "przenoszenie" komend z obiektu
+//na którym wywo³ano polecenia EntityManager'a na zawartoœæ pól kaskadowych.
+
+@Test
+    public void TestE(){
+     final EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory(ConfigConsts.PERSISTANCE_UNIT_NAME);
+     final EntityManager entityManager = entityManagerFactory.createEntityManager();
+
+     final EntityTransaction transaction = entityManager.getTransaction();
+     transaction.begin();
+	
+     Client client = entityManager.find(Client.class,1);
+	Order neworder = new Order();
+ 	neworder.setDate(new Date());
+        neworder.setDescription("new_order");
+        neworder.setNo("512");
+        neworder.setClient(client);
+        client.getOrders().add(neworder);
+        
+        transaction.commit();
+        entityManager.close();
+        
+        long countOrders = (Long) JdbcUtils.executeScalar("SELECT COUNT(*) FROM ORDERS WHERE ORDER_NO='512' AND CLIENT_ID = 1");
+        assertEquals("Blad. Zamowienie nie zostalo zapisane.", 1, countOrders);
+}
+
+ @Test
+    public void TestF(){
+    	final EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory(ConfigConsts.PERSISTANCE_UNIT_NAME);
+        final EntityManager entityManager = entityManagerFactory.createEntityManager();
+        
+        final EntityTransaction transaction = entityManager.getTransaction();
+        transaction.begin();
+        
+        Client client = entityManager.find(Client.class, 1);
+        Set<Order> orders = client.getOrders();
+        
+        for(Order myorder: orders){
+        	myorder.setNo("543");
+        	break;
+        }
+        
+        entityManager.merge(client);
+        
+        transaction.commit();
+        entityManager.close();
+        
+       
+        long countOrders = (Long) JdbcUtils.executeScalar("SELECT COUNT(*) FROM ORDERS WHERE ORDER_NO='543' AND CLIENT_ID = 1");
+        assertEquals("Blad. Zamowienie nie zostalo zapisane.", 1, countOrders);
+    }
+
+    @Test
+    public void TestG(){
+    	final EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory(ConfigConsts.PERSISTANCE_UNIT_NAME);
+        final EntityManager entityManager = entityManagerFactory.createEntityManager();
+        final EntityTransaction transaction = entityManager.getTransaction();
+        
+        transaction.begin();
+        
+        Client client = entityManager.find(Client.class, 1);
+        Set<Order> orders = client.getOrders();
+        
+        String text;
+        long countOrdersOld = 0;
+
+        for(Order myorder: orders){
+        	text = myorder.getNo();
+        	countOrdersOld =(Long) JdbcUtils.executeScalar("SELECT COUNT(*) FROM ORDERS WHERE ORDER_NO='"+ text +"' AND CLIENT_ID = 1");
+        	
+        	orders.remove(myorder);
+        	entityManager.remove(myorder);
+        	
+        	break;
+        }
+     
+        transaction.commit();
+        entityManager.close();
+       
+        long countOrdersNew = (Long) JdbcUtils.executeScalar("SELECT COUNT(*) FROM ORDERS WHERE ORDER_NO='"+ text +"' AND CLIENT_ID = 1");
+        System.out.println(countOrdersOld + " " + countOrdersNew);
+        
+        assertEquals("Blad. Zamowienie nie zostalo zapisane.", countOrdersOld - 1, countOrdersNew);
+    }
+    
+}

@@ -1,0 +1,296 @@
+Pawe³ Salicki gr 2 2018/2019 Inf rok 2
+Triggery
+
+--3.1
+CREATE TABLE OSOBY(imie varchar(15), nazwisko varchar(15), PESEL varchar(11), data_ur timestamp);
+
+--3.2
+create table PRACOWNICY (nr_prac integer, nr_zesp integer, pensja real) INHERITS (Osoby); 
+
+--3.3
+INSERT INTO OSOBY(imie, nazwisko, PESEL, data_ur) VALUES ('Jan', 'Nowak', '11111111111', '01-01-1998');
+INSERT INTO OSOBY(imie, nazwisko, PESEL, data_ur) VALUES ('Adam', 'Kowalski', '22222222222', '01-10-1990');
+INSERT INTO OSOBY(imie, nazwisko, PESEL, data_ur) VALUES ('Anna', 'Krol', '33333333333', '10-15-1990');
+
+--3.4
+INSERT INTO PRACOWNICY(imie, nazwisko, PESEL, data_ur, nr_prac, nr_zesp, pensja)
+VALUES ('Tomasz', 'Wicek', '44444444444', '12-12-1978', 1, 10, 1990);
+INSERT INTO PRACOWNICY(imie, nazwisko, PESEL, data_ur, nr_prac, nr_zesp, pensja)
+VALUES ('Maria', 'Bialek', '55555555555', '12-12-1980', 2, 10, 1991);
+
+--3.5
+SELECT * FROM pg_tables WHERE tablename='OSOBY' OR tablename='PRACOWNICY';
+
+--3.6
+select pa.attname, pt.typname  
+from pg_class pc, pg_attribute pa, pg_type pt  
+where pc.relname='osoby' 
+and pc.oid =pa.attrelid 
+and pt.oid = pa.atttypid; 
+
+--3.7
+--SELECT Pracownicy.tableoid FROM pg_tables, pracownicy
+--WHERE tablename = 'PRACOWNICY';
+SELECT tableoid FROM Pracownicy;
+
+--3.8
+SELECT tableoid FROM Osoby;
+
+--3.9
+SELECT * FROM OSOBY;
+
+--3.10
+SELECT * FROM ONLY OSOBY;
+
+--3.11
+DELETE FROM Pracownicy WHERE imie = 'Maria';
+
+--3.12
+SELECT * FROM OSOBY;
+SELECT * FROM PRACOWNICY;
+
+--3.13
+INSERT INTO PRACOWNICY(imie, nazwisko, PESEL, data_ur, nr_prac, nr_zesp, pensja)
+VALUES ('Witold', 'Wrembel', '88888888888', '02-02-1977', 2, 10, 1970);
+INSERT INTO PRACOWNICY(imie, nazwisko, PESEL, data_ur, nr_prac, nr_zesp, pensja)
+VALUES ('Kamila', 'Bialek', '99999999999', '12-12-1983', 3, 20, 1971);
+
+--3.14
+SELECT tableoid FROM Pracownicy;
+SELECT tableoid FROM Osoby;
+
+--3.15
+CREATE TABLE PREMIE(nr_prac integer, premia_kwartalna integer[]);
+
+--3.16
+INSERT INTO PREMIE VALUES(1, '{100,150,200,250}');
+
+--3.17
+SELECT * FROM PREMIE;
+SELECT premia_kwartalna[1] FROM PREMIE;
+
+--3.18
+CREATE TABLE WYPOZYCZENIA(nr_prac integer, autor_tytul text[][]);
+
+--3.19
+insert into wypozyczenia values(1, '{{"Tolkien", "Hobbit"},{"Dickens", "Klub Pickwicka"}, {"Stone", "Pasja zycia"}}');
+INSERT INTO  wypozyczenia values (2, '{{"Pascal", "Przewodnik"}, {"Archer", "Co do grosza"}}'); 
+
+--3.20
+select * from wypozyczenia; 
+--wyswietla sie tablica 2 wiersze 2 kolumny (normalnie)
+select nr_prac, autor_tytul[1][1] from wypozyczenia;
+--wyswietlaja sie Tolkien i Pascal
+select nr_prac, autor_tytul[1:3][1] from wypozyczenia;
+---Tolkien, Diskens, Stone // Pascal, Archer
+select nr_prac, autor_tytul[1:3][1:3] from wypozyczenia; 
+--Wyswietla sie wszystko
+select nr_prac, autor_tytul[1:3][2] from wypozyczenia;
+--Wyswietla sie wszystko
+select nr_prac, autor_tytul[2][2] from wypozyczenia;
+--Klub Pawlicka // Co do grosza
+select nr_prac, autor_tytul[2][1] from wypozyczenia; 
+--Dickens // Archer
+
+--3.21
+CREATE FUNCTION dane (integer) RETURNS text
+AS 'select nazwisko from Pracownicy WHERE nr_prac = $1'
+LANGUAGE 'sql';
+
+--3.22
+SELECT dane(1) as nazwisko;
+
+--3.23
+CREATE TYPE complex AS(i text, n text, p text);
+
+CREATE FUNCTION dane2 (integer) RETURNS complex
+AS 'select imie, nazwisko, PESEL from Pracownicy WHERE nr_prac = $1'
+LANGUAGE 'sql';
+
+select dane2(2);
+
+--3.24
+CREATE FUNCTION dane3 () RETURNS setof complex
+AS 'select imie, nazwisko, PESEL from Pracownicy'
+LANGUAGE 'sql';
+
+select dane3();
+
+--3.25
+CREATE TYPE informacje AS (i text);
+
+CREATE FUNCTION dane4 (integer) RETURNS text[]
+AS 'select autor_tytul[1:3][2:2]
+FROM wypozyczenia WHERE nr_prac=$1'
+LANGUAGE 'sql';
+
+select dane4(1);
+
+--3.26
+
+CREATE OR REPLACE FUNCTION concat(text,text) RETURNS text AS
+$$
+BEGIN
+RETURN $1||$2;
+END;
+$$
+LANGUAGE 'plpgsql';
+
+--3.27
+select concat('po', 'danie');
+
+--3.28
+
+CREATE OR REPLACE FUNCTION extra_money (int) RETURNS real AS
+$$
+DECLARE zm real;
+BEGIN
+select 1.25 * pensja into zm from pracownicy where nr_prac=$1;
+RETURN zm;
+END;
+$$
+LANGUAGE 'plpgsql';
+
+select extra_money(1);
+
+--3.29
+
+ALTER TABLE OSOBY ADD COLUMN PREFIX_TEL TEXT;
+ALTER TABLE OSOBY ADD COLUMN TEL TEXT;
+
+update Osoby set prefix_tel = '0-16' WHERE imie = 'Witold';
+update Osoby set tel = '7654321' where imie = 'Witold'; 
+update Osoby set prefix_tel = '0' where imie = 'Kamila'; 
+update Osoby set tel = '500010203' where imie = 'Kamila';
+
+--3.30
+
+CREATE OR REPLACE FUNCTION merge_fields(t_row pracownicy) RETURNS text AS
+$$
+BEGIN
+RETURN t_row.imie || ' ' || t_row.nazwisko || ' ' || t_row.prefix_tel || t_row.tel;
+END
+$$
+LANGUAGE plpgsql;
+
+SELECT merge_fields(t.*) FROM pracownicy t;
+
+--3.31
+
+CREATE OR REPLACE FUNCTION merge_fields(t_row osoby) RETURNS text AS
+$$
+BEGIN
+RETURN t_row.prefix_tel || t_row.tel;
+END;
+$$
+LANGUAGE plpgsql;
+
+SELECT merge_fields(t.*) FROM osoby t;
+
+--3.32
+
+CREATE RULE regula1
+AS ON UPDATE TO Pracownicy
+WHERE NEW.pensja <> OLD.Pensja
+DO INSTEAD NOTHING;
+
+--3.33
+SELECT * FROM PRACOWNICY;
+update pracownicy set nr_zesp = 30 where nr_zesp = 20; 
+select * from pracownicy; 
+update pracownicy set pensja = 2000 where imie = 'Witold'; 
+select * from pracownicy; 
+
+DROP RULE regula1 on Pracownicy;
+
+--3.34
+CREATE RULE regula22
+AS ON INSERT TO Pracownicy
+WHERE NEW.nr_prac <= 0
+DO INSTEAD NOTHING;
+
+SELECT * FROM PRACOWNICY;
+INSERT INTO PRACOWNICY(imie, nazwisko, PESEL, data_ur, nr_prac, nr_zesp, pensja)
+VALUES('Test', 'Nazwisko', '9999999999', '12-12-1912', -1, 5, 1990);
+
+SELECT * FROM PRACOWNICY;
+
+--3.35
+CREATE VIEW osob_view AS SELECT imie, nazwisko, PESEL FROM osoby WHERE imie=' ';
+
+CREATE RULE reg2 AS ON INSERT TO osob_view DO INSTEAD INSERT INTO osoby 
+VALUES (NEW.imie,NEW.nazwisko, NEW.PESEL); 
+
+--3.37
+ALTER TABLE Premie ADD COLUMN last_updated timestamptz;
+
+--3.38
+
+CREATE OR REPLACE FUNCTION upd() RETURNS trigger AS
+$$
+BEGIN
+NEW.last_updated = now();
+RETURN NEW;
+END;
+$$
+LANGUAGE plpgsql;
+
+--3.39
+
+CREATE TRIGGER last_upd
+BEFORE insert OR update ON Premie
+FOR EACH ROW
+EXECUTE PROCEDURE upd();
+
+--3.40
+
+SELECT * FROM PREMIE;
+INSERT INTO PREMIE VALUES (2, '{300,150,100,150}');
+SELECT * FROM PREMIE;
+
+--3.41
+CREATE TABLE TOWARY (id real, nazwa varchar(15), cena_netto real);
+
+insert into TOWARY VALUES(1, 'kabel', 50);
+insert into TOWARY VALUES(2, 'laptop', 940);
+insert into TOWARY VALUES(3, 'monitor', 600);
+
+--3.42
+
+CREATE OR REPLACE FUNCTION podatek_vat(cena real)
+RETURNS real AS
+$$
+BEGIN
+RETURN cena*0.23;
+END
+$$
+LANGUAGE plpgsql;
+
+select id, nazwa, cena_netto, podatek_vat(cena_netto), cena_netto+podatek_vat(cena_netto)
+AS cena_brutto from towary;
+
+--3.43
+
+CREATE TABLE TOWARY2(id integer, nazwa text, cena_netto real, cena_vat real, cena_brutto real);
+
+CREATE OR REPLACE FUNCTION upd2()
+RETURNS trigger AS
+$$
+BEGIN
+NEW.cena_vat = NEW.cena_netto * 0.23;
+NEW.cena_brutto = NEW.cena_netto + NEW.cena_netto*0.23;
+RETURN NEW;
+END;
+$$
+LANGUAGE plpgsql;
+
+DROP trigger towary_insert on towary2;
+
+CREATE TRIGGER 
+towary_insert BEFORE insert OR update ON towary2
+FOR EACH ROW EXECUTE
+PROCEDURE upd2();
+
+insert into towary2 values ('4', 'monitor', '600');
+
+SELECT * FROM towary2;

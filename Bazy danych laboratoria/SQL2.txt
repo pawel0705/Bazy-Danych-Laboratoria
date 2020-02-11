@@ -1,0 +1,209 @@
+Pawe³ Salicki gr 2 Sekcja 4
+ZADANIA SQL2B - Sekcja 2
+Próba 1
+
+--ZAD 1
+--Dla ka¿dego studenta podaj liczbê przedmiotów, z których uzyska³ on oceny. 
+
+/*
+SELECT S.nr_stud, S.nazwisko, COUNT(distinct o.nr_przedm) as 'Liczba przedmiotow'
+FROM studenci S JOIN Oceny O
+ON s.NR_STUD = o.NR_STUD
+group by S.nazwisko, S.nr_stud;
+*/
+
+--ZAD 2
+-- Podaj nazwy tematów, do których przydzielone s¹ co najwy¿ej 3 osoby. 
+
+/*
+SELECT T.temat, count(Prz.nr_tem) as 'Ilosc przydzialow'
+FROM tematy T JOIN przydzialy Prz ON T.NR_TEM=Prz.NR_TEM
+
+group by T.temat, T.nr_tem
+having count(Prz.nr_tem )<=3; 
+*/
+
+--ZAD 3...
+--Podaj tematy, w których wyp³aty mia³o najmniej pracowników
+
+/*
+SELECT T.temat
+FROM tematy T JOIN wyplaty W
+ON T.NR_TEM=W.NR_TEM
+group by T.NR_TEM, T.temat
+having count(distinct W.NR_PRAC) <= ALL
+(Select count(distinct w1.nr_prac)
+FROM wyplaty W1 GROUP BY W1.nr_tem);
+*/
+
+--ZAD 4
+--Podaj numery i nazwiska studentów - mê¿czyzn, którzy s¹ starsi 
+--od co najmniej jednego z pracowników zespo³u OPROGRAMOWANIE.
+/*
+SELECT S.nr_stud, S.nazwisko, S.data_ur
+FROM studenci S
+WHERE S.plec = 'M' AND S.DATA_UR < ANY
+(SELECT P.data_ur FROM pracownicy P, zespoly Z
+WHERE P.NR_ZESP = Z.NR_ZESP AND Z.NAZWA_ZESP = 'OPROGRAMOWANIE' group by P.data_ur);
+*/
+
+--ZAD 5
+-- Podaj numery i nazwiska studentów kierunku INFORMATYKA, którzy 
+--z przedmiotu BAZY DANYCH otrzymali oceny wy¿sze od ocen ka¿dego ze studentów kierunku ROBOTYKA z tego przedmiotu. 
+/*
+SELECT distinct S.nr_stud, S.nazwisko
+FROM studenci S, kierunki K, Przedmioty P, Oceny O
+WHERE S.NR_KIER = K.nr_kier
+AND K.NR_KIER = P.nr_kier AND P.nr_przedm = O.nr_przedm AND P.nazwa_przedm = 'BAZY DANYCH'
+AND K.NR_KIER LIKE 'INFORMATYKA'
+and NOT EXISTS (
+SELECT distinct S2.nr_stud , s2.nazwisko
+FROM studenci S2, kierunki K2, Przedmioty P2, oceny O2
+WHERE S2.nr_kier = k2.nr_kier and k2.nazwa_kier = 'ROBOTYKA' AND
+K2.nr_kier = P2.nr_kier and P2.NAZWA_PRZEDM = 'BAZY DANYCH'
+AND P2.nr_przedm = O2.NR_PRZEDM AND O2.ocena > O.OCENA);
+*/
+
+--Zad 6
+--Podaj nazwiska najm³odszych pracowników w poszczególnych zespo³ach. 
+
+/*
+SELECT P.nazwisko, Z.nazwa_zesp, P.data_ur
+FROM pracownicy P, zespoly Z
+WHERE P.nr_zesp = z.nr_zesp
+AND p.data_ur >= ALL
+(select p1.data_ur From pracownicy P1
+WHERE z.nr_zesp = p1.nr_zesp group by p1.data_ur)
+--GROUP BY p.nazwisko, z.nazwa_zesp, p.DATA_UR;
+*/
+
+--Zad 7
+--Podaj dane o studentach, którzy nie maj¹ jeszcze ¿adnej oceny
+
+/*
+select s.nr_stud, s.nazwisko
+from studenci s left join oceny O ON s.NR_STUD=o.nr_stud
+group by s.NR_STUD, s.NAZWISKO having count (o.ocena)=0;
+*/
+
+--Zad 8
+-- Zestawienie tematów z liczb¹ pracowników, którzy mieli wyp³aty w tych tematach 
+--o postaci: Nr_tem nazwa_tematu liczba_pracowników  W zestawieniu powinny siê równie¿ 
+--tematy z których w ogóle nie by³o wyp³at. Nale¿y uwzglêdniæ fakt, ¿e pracownik móg³ 
+--pobraæ wielokrotnie wyp³atê za ten sam temat. 
+
+/*
+SELECT T.nr_tem as 'nr_tem', T.Temat as 'nazwa_tematu', count(distinct p.nr_prac) as 'liczba_pracownikow'
+from tematy T left join wyplaty W on T.nr_tem = W.nr_tem left join pracownicy P on p.nr_prac = w.nr_prac
+group by T.nr_tem, T.temat;
+*/
+
+--Zad 9
+/*
+Utworzyæ perspektywê zawieraj¹c¹ wyszczególnione informacje, oraz okreœliæ, 
+czy mo¿na aktualizowaæ dane w tej perspektywie. Je¿eli nie mo¿na - 
+podaæ wszystkie tego przyczyny. Po pomyœlnym wykonaniu zadania nale¿y usun¹æ 
+utworzon¹ przez siebie perspektywê. 
+Zestawienie ³¹cznych dochodów osi¹gniêtych w poszczególnych tematach o postaci: 
+ nr_tem nazwa_tematu ³¹czna_kwota 
+*/
+ 
+/*
+CREATE VIEW A AS
+SELECT T.nr_tem AS Nr_tem, T.temat AS nazwa_tematu,
+sum(kwota) AS laczna_kwota
+FROM tematy T LEFT OUTER JOIN wyplaty W
+ON T.nr_tem = W.nr_tem
+GROUP BY T.nr_tem, T.temat;
+
+SELECT * FROM A;
+DROP VIEW A;
+
+*/
+
+--Zad 10
+/*
+Zrealizowaæ zestawienie œrednich, minimalnych i maksymalnych zarobków pracowników
+w poszczególnych zespo³ach.
+Uwaga!
+Zestawienie zrealizowaæ w dwóch krokach:
+? w pierwszym utworzyæ perspektywê (widok) o postaci:
+nrz nazwa_zesp nr_prac nazwisko suma_zarobków_prac
+uwzglêdniæ równie¿ fakt, ¿e pracownik móg³ nie dostaæ ¿adnej wyp³aty,
+? utworzon¹ perspektywê wykorzystaæ w zadaniu
+*/
+
+/*
+CREATE VIEW B AS
+SELECT z.nr_zesp AS nrz, z.nazwa_zesp AS nazwa_zesp,
+pr.nr_prac AS nr_prac, pr.nazwisko AS nazwisko,
+SUM(w.kwota) AS suma_zarobkow_prac
+FROM zespoly z JOIN pracownicy pr ON pr.nr_zesp = z.nr_zesp
+LEFT OUTER JOIN wyplaty w
+ON w.nr_prac = pr.nr_prac
+GROUP BY z.nr_zesp,z.nazwa_zesp,pr.nr_zesp,pr.nazwisko;
+
+SELECT nrz, nazwa_zesp, min(suma_zarobkow_prac),
+avg(suma_zarobkow_prac), max(suma_zarobkow_prac)
+FROM B
+GROUP BY nrz,nazwa_zesp;
+
+DROP VIEW B;
+*/
+
+
+--Zad 11
+--Podaj nazwiska pracowników, którzy nie zostali przydzieleni do tematu, ale otrzymali w tym
+--temacie jak¹œ wyp³atê.
+
+/*
+ SELECT DISTINCT pra.nr_prac, pra.nazwisko
+ FROM pracownicy pra JOIN przydzialy prz ON prz.NR_PRAC = pra.NR_PRAC
+ RIGHT JOIN wyplaty w ON pra.NR_PRAC = w.NR_PRAC
+ WHERE kwota is not null;
+*/
+
+--Zad 12
+--Sprawdziæ poprawnoœæ przydzia³u kierowników do tematu (jest to niezale¿nie okreœlone za
+--pomoc¹ klucza obcego nr_prac_kt w tabeli TEMATY oraz przez zapis w tabeli
+--PRZYDZIA£Y – nale¿y sprawdziæ czy oba te zapisy sobie odpowiadaj¹).
+
+/*
+SELECT nr_prac_kt, nr_tem
+		FROM tematy t
+		WHERE NOT EXISTS (
+			SELECT *
+			FROM przydzialy p
+			WHERE t.nr_prac_kt = p.NR_PRAC
+			AND t.nr_tem = p.nr_tem
+			AND kod_funkcji like 'krw')
+		UNION
+		SELECT nr_prac, nr_tem
+		FROM przydzialy p
+		WHERE kod_funkcji like 'krw'
+		AND NOT EXISTS (
+			SELECT * FROM tematy t
+			WHERE t.NR_PRAC_KT = p.nr_prac
+			AND t.nr_tem = p.nr_tem)
+*/
+
+--Zad 13
+--Podaj numery i nazwiska pracowników nie bior¹cych udzia³u w ¿adnym z tematów, którym
+--kieruje pracownik NIEZALEZNY.
+
+/*
+SELECT pr.nr_prac,pr.nazwisko, count(t.nr_tem)
+ FROM tematy t JOIN przydzialy p ON t.NR_TEM = p.NR_TEM
+ right JOIN pracownicy pr ON pr.NR_PRAC = p.NR_PRAC 
+ WHERE t.NR_TEM NOT IN(
+ SELECT prz.nr_tem
+ FROM przydzialy prz JOIN pracownicy pra ON prz.nr_prac = pra.nr_prac
+ where pra.nazwisko = 'NIEZALEZNY'
+) OR t.nr_tem is null
+group by pr.NR_PRAC, pr.NAZWISKO
+HAVING count(t.nr_tem) =(
+SELECT count(tt.nr_tem)
+FROM tematy tt JOIN przydzialy pp ON tt.NR_TEM = pp.NR_TEM
+WHERE pp.NR_PRAC = pr.NR_PRAC
+);
+*/

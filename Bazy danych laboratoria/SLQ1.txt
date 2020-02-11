@@ -1,0 +1,200 @@
+--Pawe³ Salicki gr2 AEI Inf sem 4 SSI sekcja 4
+--Zestaw A
+--2019-04-04
+--Próba 2
+
+--ZAD 1
+--Podaæ nazwê tematu o numerze 5
+/*SELECT temat 
+FROM tematy 
+WHERE nr_tem = 5;
+*/
+
+--ZAD 2
+--Podaæ nazwiska pracowników zaczynaj¹ce siê od litery K
+/*SELECT nazwisko 
+FROM pracownicy 
+WHERE nazwisko LIKE 'K%';
+*/
+
+--ZAD 3 
+--Podaæ nazwy tematów, których kierownikiem jest pracownik MISIURA
+/*SELECT temat 
+FROM tematy t, pracownicy p 
+WHERE t.nr_prac_kt = p.nr_prac
+and p.nazwisko = 'MISIURA';
+*/
+
+
+--ZAD 4
+--Podaæ daty wyp³at, które otrzyma³y kobiety
+--urodzone przed 1970 rokiem wed³ug daty wyp³aty.
+/*
+SELECT w.data_wypl 
+FROM wyplaty w, pracownicy p 
+WHERE p.data_ur < '1970-00-00' 
+AND w.NR_PRAC = p.NR_PRAC
+AND p.PLEC = 'K'
+order by data_wypl; 
+*/
+
+
+--ZAD 5
+--Podaæ wszystkie funkcje, które pe³ni pracownik MISIURA
+/*
+SELECT nazwa_funkcji 
+FROM funkcje f, przydzialy przyd, pracownicy prac
+WHERE f.KOD_FUNKCJI = przyd.kod_funkcji 
+AND przyd.nr_prac = prac.nr_prac
+AND prac.nazwisko LIKE 'MISIURA';
+*/
+
+--ZAD 6
+--Podaæ w odwrotnej kolejnoœci alfabetycznej nazwiska
+--pracowników mê¿czyzn, którzy przydzieleni s¹ do tematu DYSK lub tematu GUPTA
+/*
+SELECT nazwisko
+FROM pracownicy prac, tematy t, przydzialy przyd  
+WHERE (t.TEMAT = 'DYSK' OR t.temat = 'GUPTA')
+AND t.nr_tem = przyd.NR_TEM
+AND prac.NR_PRAC = przyd.nr_prac
+AND prac.PLEC = 'M'
+order by nazwisko desc;
+*/
+
+--ZAD 7
+--Podaæ wszystkie funkcje pe³nione przez pracowników w tematach,
+--które rozpoczê³y siê i zosta³y odebrane przed rokiem 1990. 
+--Ka¿da funkcja powinna pojawiæ siê tylko raz 
+
+/*
+SELECT DISTINCT nazwa_funkcji
+FROM funkcje f, przydzialy przyd, tematy t
+WHERE t.DATA_ROZP < '1990-00-00'
+AND t.data_odb < '1990-00-00'
+AND t.NR_TEM = przyd.nr_tem
+AND przyd.KOD_FUNKCJI = f.kod_funkcji;
+*/
+
+--ZAD 8
+--Podaæ nazwy tematów i nazwy ich tematów nadrzêdnych
+/*
+SELECT nadrzedny.temat as "Nadrzedny",
+podrzedny.temat as "Podrzedny"
+FROM tematy podrzedny, tematy nadrzedny
+WHERE podrzedny.nr_tem_nadrz = nadrzedny.nr_tem;
+*/
+
+--ZAD 9
+--Podaæ ile przydzia³ów ma pracownik MISIURA
+/*
+SELECT COUNT(*) 
+FROM pracownicy prac, przydzialy przyd
+WHERE prac.nazwisko = 'MISIURA'
+AND przyd.NR_PRAC = prac.nr_prac;
+*/
+
+--ZAD 10
+--Podaæ sumê wszystkich wyp³at w temacie DYSK.
+/*
+SELECT SUM(kwota)
+FROM tematy t, wyplaty w
+WHERE w.NR_TEM = t.NR_TEM
+AND t.temat LIKE 'DYSK';
+*/
+
+--ZAD 11
+--Podaæ œredni¹ wyp³atê wszystkich pracowników bêd¹cych kierownikami tematów
+/*
+SELECT AVG (kwota) as 'Srednia wyplata'
+FROM wyplaty W JOIN pracownicy P
+ON W.NR_PRAC = P.NR_PRAC
+JOIN przydzialy Prz
+ON P.NR_PRAC = Prz.NR_PRAC
+JOIN funkcje F
+ON Prz.KOD_FUNKCJI = F.KOD_FUNKCJI
+WHERE F.NAZWA_FUNKCJI = 'kierownik';
+*/
+
+--ZAD 12
+--Podaæ iloœæ i sumê wyp³at w poszczególnych tematach.
+/*
+SELECT COUNT(W.nr_tem) AS "ilosc", 
+SUM(kwota) AS "suma",
+temat
+FROM wyplaty w, tematy t
+WHERE w.NR_TEM = t.nr_tem
+group by temat, T.nr_tem;
+*/
+
+--ZAD 13
+--Podaæ œrednie wyp³aty dla ka¿dego pracownika.
+/*
+SELECT nazwisko, avg(kwota)
+FROM pracownicy p, wyplaty w
+WHERE p.nr_prac = w.nr_prac
+group by nazwisko, P.nr_prac;
+*/
+
+--ZAD 14
+--Podaæ daty urodzenia najstarszych pracowników przydzielonych do ka¿dej z funkcji.
+/*
+SELECT f.nazwa_funkcji , MIN(p.data_ur) AS "data urodzenia"
+FROM pracownicy p JOIN przydzialy prz JOIN funkcje f
+ON p.nr_prac=prz.nr_prac
+AND prz.kod_funkcji=f.kod_funkcji group by nazwa_funkcji;
+*/
+
+--ZAD 15
+--Podaæ wszystkie tematy w których s¹ przydzia³y do funkcji Tester i iloœæ tych przydzia³ów
+/*
+SELECT temat, COUNT(*) AS ilosc 
+FROM przydzialy prz JOIN funkcje f JOIN tematy t 
+ON prz.kod_funkcji=f.kod_funkcji AND prz.nr_tem=t.nr_tem group by temat, t.nr_tem;
+*/
+
+--ZAD 16
+--Podaæ wszystkie tematy dla których suma wyp³at jest mniejsza od 400
+/*
+SELECT temat from wyplaty w JOIN tematy t
+ON w.nr_tem = t.nr_tem group by temat , t.NR_TEM HAVING SUM(kwota)<400;
+*/
+--ZAD 17
+--Podaæ nazwiska wszystkich pracowników, którzy s¹ przydzieleni do wiêcej ni¿ 5 ró¿nych tematów.
+/*
+SELECT nazwisko FROM pracownicy p JOIN przydzialy prz
+ON p.NR_PRAC = prz.NR_PRAC
+group by nazwisko, p.NR_PRAC
+HAVING COUNT(DISTINCT nr_tem) > 5; 
+*/
+--ZAD 18
+--Podaæ tematy, których data rozpoczêcia jest wczeœniejsza ni¿ data rozpoczêcia tematu DYSK.
+/*
+SELECT temat, data_rozp 
+FROM tematy group by temat, nr_tem
+having (data_rozp<(SELECT data_rozp FROM tematy WHERE temat = 'DYSK'));
+*/
+
+--ZAD 19
+--Podaæ nazwiska pracowników, których suma wyp³at jest wiêksza ni¿ suma wyp³at pracownika MISIURY
+
+/*
+SELECT nazwisko, P.nr_prac 
+FROM pracownicy P , wyplaty W 
+WHERE P.nr_prac=W.nr_prac group by nazwisko having sum(kwota) < 
+(select sum(kwota) FROM pracownicy pp, wyplaty ww 
+WHERE pp.nr_prac=ww.nr_prac AND nazwisko = 'MISIURA');
+*/
+
+--ZAD 20
+--Podaæ tematy do których przydzielono wiêcej pracowników ni¿ do tematu DYSK
+
+/*
+SELECT T.temat FROM tematy T, pracownicy P, Przydzialy Prz
+WHERE T.NR_TEM=Prz.NR_TEM AND P.NR_PRAC=Prz.NR_PRAC
+GROUP BY T.temat, T.nr_tem
+HAVING COUNT(DISTINCT P.nr_zesp)>(
+SELECT COUNT(DISTINCT P2.nr_zesp)
+FROM pracownicy P2, tematy T2, przydzialy Prz2
+WHERE P2.nr_prac=Prz2.nr_prac AND Prz2.nr_tem=T2.nr_tem AND T2.temat = 'DYSK');
+*/

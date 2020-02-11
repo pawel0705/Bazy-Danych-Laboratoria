@@ -1,0 +1,197 @@
+Pawe³ Salicki gr 2 - Sekcja 4
+Sprawozdanie Transakcje BD
+16.05.2019r.
+
+--------------------------------
+
+READ UNCOMMITED - READ UNCOMMITED
+
+A - Polecenie update students w T2 nie wp³ynê³o na zmianê
+zawartoœci tabeli studentów po u¿yciu polecenia Select * from Studenci w T1
+B - Aktualizacja tabeli w T2 dokona³a zmiany w T1
+Student o ID = 1 Zmieni³ imiê na XX2
+C - Mo¿na w T1 wyœwietlic dalej tabelê mimo po u¿yciu w T2 begin
+D - nic nie uleg³o Zmianie
+E - Po poleceniu begin w T1, w T1 oraz T2 mo¿na wyœwietlic zawartosc
+tabeli
+F - Po zaktualizowaniu tabeli Studentow w T1 oraz uzyciu polecenia
+rollback, w T2 po u¿yciu poolecenia SELECT * FROM students, zaobserwowano
+zaktualizowan¹ tabelê
+G - w T2 po aktualizacji tabeli i u¿yciu polecania rollback nie zauwa¿ono
+¿adnych zmian
+
+READ UNCOMMITED - READ COMMITTED
+
+A - w T2 po zaktualizowaniu tabeli i u¿yciu rollback po u¿yciu begin a nastêpnie
+SELECT * from students W T1 tabela nie uleg³a zmianie
+B - w T2 po u¿yciu polecenia commit, zawartoœc tabeli w T1 uleg³a zmianie
+C - w T1 wyœwietlono tabelê z niezmienion¹ zawartoœci¹
+D - nie zaobserwowano zmian w porównaniu do poprzedniego punktu
+E - w T1 i T2 tabele s¹ takie same, nic nie uleg³o zmianie
+F - w T1 zaktualizowano zawartoœc tabeli bez b³êdów
+G - w T2 zaktualizowano tabele
+
+READ UNCOMMITED - REPEATABLE READ
+
+A - po aktualizacji tabeli w T2, tabela T1 uleg³a zmianie
+B - w T2 bez b³êdów i problemów wywo³ano procdurê aktualizacji tabeli
+C - w T1 nie odnotowano zmian w tabeli przed u¿yciem procedury commit w T2
+D - w T1 ju¿ po 'commit' zauwa¿ono zaktualizowan¹ tabelê
+E - nic nie uleg³o zmianie w obu przypadkach mo¿na wyœwietlic tabelê
+F - zaktualizowano tabelê w T1
+G - po u¿yciu najpierw w T2 rollback a potem w T1 proces siê nie zablokowa³
+
+READ UNCOMMITED - SERIALIZABLE
+
+A-  po aktualizacji tabeli w T2, tabela T1 uleg³a zmianie
+B-  zmiana tabeli uleg³a wycofaniu 
+C- nie zaobserwowano zmian
+D- nie zaobserwpwano zmian
+E- nie zaobserwowano zmian w porównaniu do poprzednich punktów
+F- Po akutalizacji tabeli w T1 proces siê zawiesi³
+G- Po aktualizacji tabeli w T2 proces siê zawiesi³ oraz wyœwietli³ siê komunikat DEAD LOCK
+H- PO operacji rollback w T2 proces siê odwiesi³
+
+---------------------------------
+
+READ COMMITTED - READ UNCOMMITTED
+
+A-Polecenie select (T1), nie wyœwietli³o dokonanych zmian poleceniem update (T2);
+B-Polecenie update zosta³o wykonane pomyœlnie (T2);
+C-Polecenie select (T1), nie wyœwietli³o dokonanych zmian poleceniem update (T2);
+D-Po dokonaniu zatwierdzenia zmian poleceniem commit (T2), polecenie select (T1) wyœwietli³o zmiany dokonane poleceniem update (T2);
+E-Polecenie select (T1, T2) zosta³o poprawnie wykonane - wyœwietlone zosta³y te same dane;
+F-Polecenie update zosta³o poprawnie wykonane (T1);
+G-Po próbie wykonania polecenia update (T2) transakcja zosta³a wstrzymana;
+
+READ COMMITTED - READ COMMITTED
+
+A-Polecenie select (T1), nie wyœwietli³o dokonanych zmian poleceniem update (T2);
+B-Polecenie update zosta³o wykonane pomyœlnie (T2);
+C-Polecenie select (T1), nie wyœwietli³o dokonanych zmian poleceniem update (T2);
+D-Po dokonaniu zatwierdzenia zmian poleceniem commit (T2), polecenie select (T1) wyœwietli³o zmiany dokonane poleceniem update (T2);
+E-Polecenie select (T1, T2) zosta³o poprawnie wykonane - wyœwietlone zosta³y te same dane;
+F-Polecenie update zosta³o poprawnie wykonane (T1);
+G-Po próbie wykonania polecenia update (T2) transakcja zosta³a wstrzymana;
+
+READ COMMITTED - REPEATABLE READ
+
+A-Polecenie select (T1), nie wyœwietli³o dokonanych zmian poleceniem update (T2);
+B-Polecenie update zosta³o wykonane pomyœlnie (T2);
+C-Polecenie select (T1), nie wyœwietli³o dokonanych zmian poleceniem update (T2);
+D-Po dokonaniu zatwierdzenia zmian poleceniem commit (T2), polecenie select (T1) wyœwietli³o zmiany dokonane poleceniem update (T2);
+E-Polecenie select (T1, T2) zosta³o poprawnie wykonane - wyœwietlone zosta³y te same dane;
+F-Polecenie update zosta³o poprawnie wykonane (T1);
+G-Po próbie wykonania polecenia update (T2) transakcja zosta³a wstrzymana;
+
+READ COMMITTED - SERIALIZABLE
+
+A-Polecenie select (T1), nie wyœwietli³o dokonanych zmian poleceniem update (T2);
+B-Polecenie update zosta³o wykonane pomyœlnie (T2);
+C-Polecenie select (T1), nie wyœwietli³o dokonanych zmian poleceniem update (T2);
+D-Po dokonaniu zatwierdzenia zmian poleceniem commit (T2), polecenie select (T1) wyœwietli³o zmiany dokonane poleceniem update (T2);
+E-Polecenie select (T1, T2) zosta³o poprawnie wykonane - wyœwietlone zosta³y te same dane;
+F-Po próbie wykonania polecenia update (T1) transakcja zosta³a wstrzymana;
+G-Polecenie update (T2) wywo³a³o b³¹d "SQL Error (1213): Dedlock found when trying to get lock; try restarting transaction" - wykryto blokadê(T1), polecenie update zosta³o wykonane pomyœlnie (T2);
+
+---------------------------------
+
+SERIALIZABLE - READ UNCOMMITTED
+
+A - zablokowany z odczytaniem, a¿ do T2 rollback
+B - zablokowany, a¿ do T1 rollback
+C - odczyta³ (bo T2 zablokowany) niezmienione dane
+D - odczyta³ (bo T2 zablokowany) niezmienione dane
+E - odczyta³ dane
+F - zmieni³ dane
+G - zablokowany, a¿ do T1 rollback
+
+SERIALIZABLE - READ COMMITTED
+
+A - zablokowany z odczytaniem, a¿ do T2 rollback
+B - zablokowany, a¿ do T1 rollback
+C - odczyta³ (bo T2 zablokowany) niezmienione dane
+D - odczyta³ (bo T2 zablokowany) niezmienione dane
+E - odczyta³ dane
+F - zmieni³ dane
+G - zablokowany, a¿ do T1 rollback
+
+SERIALIZABLE  - REPEATABLE READ
+
+A - zablokowany z odczytaniem, a¿ do T2 rollback
+B - zablokowany, a¿ do T1 rollback
+C - odczyta³ (bo T2 zablokowany) niezmienione dane
+D - odczyta³ (bo T2 zablokowany) niezmienione dane
+E - odczyta³ dane
+F - zmieni³ dane
+G - blokada wzajemna
+
+SERIALIZABLE - SERIALIZABLE 
+
+A - zablokowany z odczytaniem, a¿ do T2 rollback
+B - zablokowany, a¿ do T1 rollback
+C - odczyta³ (bo T2 zablokowany) niezmienione dane
+D - odczyta³ (bo T2 zablokowany) niezmienione dane
+E - odczyta³ dane
+F - zmieni³ dane
+G - blokada wzajemna
+
+---------------------------------
+
+REPEATABLE READ - READ UNCOMMITED
+
+A - Zmiana ustawiona w client2 (bez commit) nie zostaje uwzglêdniona przy odczycie studentów	
+w client1.
+B - nic nie uleg³o zmianie
+C - Zmiana ustawiona w client2 (bez commit) nie zostaje uwzglêdniona przy odczycie studentów	
+w client1.
+D - Zmiana ustawiona w client2 (z commit, ale bez rozpoczêcia nowej transakcji)
+nie zostaje uwzglêdniona przy odczycie studentów w client1.
+E - Zmiana ustawiona w client2 (z commit i z rozpoczêciem nowej transakcji) 
+zostaje uwzglêdniona przy odczycie studentów w client1 oraz client2.
+F - nic nie uleg³o zmianie
+G - nic nie uleg³o zmianie
+
+REPEATABLE READ - READ COMMITED
+
+A - Zmiana ustawiona w client2 (bez commit) nie zostaje uwzglêdniona przy odczycie studentów	
+w client1.
+B - nic nie uleg³o zmianie
+C - Zmiana ustawiona w client2 (bez commit) nie zostaje uwzglêdniona przy odczycie studentów	
+w client1.
+D - Zmiana ustawiona w client2 (z commit, ale bez rozpoczêcia nowej transakcji)
+nie zostaje uwzglêdniona przy odczycie studentów w client1.
+Zmiana ustawiona w client2 (z commit i z rozpoczêciem nowej transakcji) 
+zostaje uwzglêdniona przy odczycie studentów w client1 oraz client2.
+E - nic nie uleg³o zmianie
+F - nic nie uleg³o zmianie
+G - nic nie uleg³o zmianie
+
+REPEATABLE READ - REPEATABLE READ
+A - Zmiana ustawiona w client2 (bez commit) nie zostaje uwzglêdniona przy odczycie studentów	
+w client1.
+B - nic nie uleg³o zmianie
+C - Zmiana ustawiona w client2 (bez commit) nie zostaje uwzglêdniona przy odczycie studentów	
+w client1.
+D -  Zmiana ustawiona w client2 (z commit, ale bez rozpoczêcia nowej transakcji)
+nie zostaje uwzglêdniona przy odczycie studentów w client1.
+Zmiana ustawiona w client2 (z commit i z rozpoczêciem nowej transakcji) 
+zostaje uwzglêdniona przy odczycie studentów w client1.
+E - nic nie uleg³o zmianie
+F - nic nie uleg³o zmianie
+G - nic nie uleg³o zmianie
+
+REPEATABLE READ - SERIALIZABLE
+
+A - Zmiana ustawiona w client2 (bez commit) nie zostaje uwzglêdniona przy odczycie studentów	
+w client1.
+B - nic nie uleg³o zmianie
+C - Zmiana ustawiona w client2 (bez commit) nie zostaje uwzglêdniona przy odczycie studentów	
+w client1.
+D -  Zmiana ustawiona w client2 (z commit, ale bez rozpoczêcia nowej transakcji)
+nie zostaje uwzglêdniona przy odczycie studentów w client1.
+Zmiana ustawiona w client2 (z commit i z rozpoczêciem nowej transakcji) 
+zostaje uwzglêdniona przy odczycie studentów w client1.
+E - nic nie uleg³o zmianie
+F - Blokuje proces.
+G - Pojawia siê b³¹d "SQL Error(1213): Deadlock found when trying to get lock; try restarting transaction".

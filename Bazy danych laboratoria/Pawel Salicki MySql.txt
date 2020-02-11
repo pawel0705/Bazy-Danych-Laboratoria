@@ -1,0 +1,312 @@
+Pawel Salicki
+Sprawozdanie MYSQL
+gr 2 sekcja 4
+
+----------Instalacja
+
+---5d
+mysql> describe przydzialy
+    -> \g
++-------------+---------+------+-----+---------+-------+
+| Field       | Type    | Null | Key | Default | Extra |
++-------------+---------+------+-----+---------+-------+
+| NR_PRAC     | int(11) | NO   |     | NULL    |       |
+| NR_TEM      | int(11) | NO   |     | NULL    |       |
+| KOD_FUNKCJI | char(3) | NO   |     | NULL    |       |
++-------------+---------+------+-----+---------+-------+
+
+Instalacja
+---6c - i
+mysql> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| uczelnia           |
+| university         |
++--------------------+
+4 rows in set (0.02 sec)
+
+-- ii
+
+mysql> show processlist;
++----+------+-----------------+------+---------+------+-------+------------------+
+| Id | User | Host            | db   | Command | Time | State | Info             |
++----+------+-----------------+------+---------+------+-------+------------------+
+|  3 | root | localhost:50072 | NULL | Query   |    0 | NULL  | show processlist |
++----+------+-----------------+------+---------+------+-------+------------------+
+1 row in set (0.00 sec)
+
+-- iii
+mysql> show processlist;
++----+------+-----------------+------+---------+------+-------+------------------+
+| Id | User | Host            | db   | Command | Time | State | Info             |
++----+------+-----------------+------+---------+------+-------+------------------+
+| 12 | root | localhost:50072 | NULL | Query   |    0 | NULL  | show processlist |
++----+------+-----------------+------+---------+------+-------+------------------+
+1 row in set (0.00 sec)
+
+-- iv
+mysql> show create table pracownicy;
+| Table      | Create Table                                                                   | pracownicy | CREATE TABLE "pracownicy" (
+  "NR_PRAC" int(11) NOT NULL,
+  "PLEC" char(1) NOT NULL,
+  "DATA_UR" datetime DEFAULT NULL,
+  "NAZWISKO" char(15) DEFAULT NULL,
+  "NR_ZESP" smallint(6) NOT NULL
+)|
+1 row in set (0.05 sec)
+
+Komentarz: wszystkie podpuknty zadzia³a³y bez zarzutu.
+
+--- e
+
+Uda³o sie zaimportowac plik do nowej bazy danych
+
+--- f
+mysql> show tables;
++------------------+
+| Tables_in_labbd  |
++------------------+
+| instytuty        |
+| kierunki         |
+| oceny            |
+| pracownicy       |
+| przedmioty       |
+| przydzialy       |
+| rozklady         |
+| sale             |
+| studenci         |
+| tematy           |
+| typy_przedmiotow |
+| wyplaty          |
+| zespoly          |
++------------------+
+13 rows in set (0.00 sec)
+
+mysql> show columns from studenci;
++----------+-------------+------+-----+---------+-------+
+| Field    | Type        | Null | Key | Default | Extra |
++----------+-------------+------+-----+---------+-------+
+| NR_STUD  | smallint(6) | NO   |     | NULL    |       |
+| NAZWISKO | char(20)    | NO   |     | NULL    |       |
+| DATA_UR  | datetime    | NO   |     | NULL    |       |
+| PLEC     | char(1)     | NO   |     | NULL    |       |
+| NR_KIER  | smallint(6) | NO   |     | NULL    |       |
++----------+-------------+------+-----+---------+-------+
+5 rows in set (0.09 sec)
+
+Pomyœlinie zaimportowano bazê danych z pliku (bez tabeli funkcje poniewaz plik zawieral naglowek z html i dla tej tabeli otrzymalem komunikat: 
+ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '<pre><div class="text_to_html">CREATE TABLE funkcje (KOD_FUNKCJI char(3) NOT ' at line 1.)
+
+
+--------Operacje na bazie danych
+
+--- 1b.
+Query OK, 0 rows affected (0.03 sec)
+
+mysql> select * from casdat into outfile 'casdat.dump';
+Query OK, 76211 rows affected (0.07 sec)
+
+mysql> truncate casdat;
+Query OK, 0 rows affected (0.02 sec)
+
+mysql> load data infile 'casdat.dump' into table casdat;
+Query OK, 76211 rows affected (0.12 sec)
+Records: 76211  Deleted: 0  Skipped: 0  Warnings: 0
+
+ladowanie sposobem z podpunktu e okazal sie szybszy niz ten z podpunktu g.
+
+--- 2
+
+Table Dyzury:
+
+Dodawanie rekordów:
+1.Query OK, 1 row affected (0.00 sec)
+2.Query OK, 1 row affected (0.00 sec)
+3.Query OK, 1 row affected, 1 warning (0.00 sec)
+
+c.
+Query OK, 1 row affected, 1 warning (0.00 sec)
+
+d.
+Query OK, 1 row affected (0.00 sec). (Piatek to pi¹ta wartosc enuma)
+
+e.
++------+-------+
+| ido  | dzien |
++------+-------+
+|    1 | wt    |
+|    2 | pt    |
+|    2 |       |
+|    2 |       |
+|    2 | pt    |
++------+-------+
+5 rows in set (0.00 sec)
+
+Przy wprowadzeniu wartosci zwraca wartosc o tym indeksie;
+"If you retrieve an ENUM value in a numeric context, the column value's index is returned."
+Jeœli wartosc jest nieprawidlowa, zwraca wartosc NULL;
+"If you insert an invalid value into an ENUM (that is, a string not present in the list of permitted values), the empty string is inserted instead as a special error value."
+
+Table Dyzury_set
+c. Query OK, 1 row affected (0.00 sec)
+d. Query OK, 1 row affected (0.00 sec)
+e. 
++------+-------+
+| ido  | dzien |
++------+-------+
+|    1 | wt,sr |
+|    5 | pn,sr |
++------+-------+
+2 rows in set (0.00 sec)
+
+Jesli wprowadzimy kilka z wartosci to wstawi nam je do tej kolumny.
+"For a value containing more than one SET element, it does not matter what order the elements are listed in when you insert the value.
+
+If you set a SET column to an unsupported value, the value is ignored and a warning is issued: "
+
+Polecenie: update dyzur_set set dzien='sb' where find_in_set('wt', dzien);
+Query OK, 1 row affected (0.00 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+znalaz³o rekordy zawieraj¹ce wtorek i zmieni³o wartoœæ pola na sobota
+
+
+----------- SILNIKI
+
+
+
+1.
+mysql> SHOW TABLE STATUS WHERE NAME='studenci';
++----------+--------+---------+------------+------+----------------+-------------+------------------+--------------+-----------+----------------+---------------------+---------------------+------------+-------------------+----------+----------------+---------+
+| Name     | Engine | Version | Row_format | Rows | Avg_row_length | Data_length | Max_data_length  | Index_length | Data_free | Auto_increment | Create_time         | Update_time         | Check_time | Collation         | Checksum | Create_options | Comment |
++----------+--------+---------+------------+------+----------------+-------------+------------------+--------------+-----------+----------------+---------------------+---------------------+------------+-------------------+----------+----------------+---------+
+| studenci | MyISAM |      10 | Fixed      |   66 |             34 |        2244 | 9570149208162303 |         1024 |         0 |           NULL | 2019-06-06 12:01:29 | 2019-06-06 12:01:30 | NULL       | latin1_swedish_ci |     NULL |                |         |
++----------+--------+---------+------------+------+----------------+-------------+------------------+--------------+-----------+----------------+---------------------+---------------------+------------+-------------------+----------+----------------+---------+
+1 row in set (0.00 sec)
+
+
+2.
+dla kazdej tabeli sa utworzene nastepujace pliki:
+nazwa.frm nazwa.MYD nazwa.MYI
+
+3.
+Pomyslnie zmieniono.
+Query OK, 66 rows affected (0.01 sec)
+Records: 66  Duplicates: 0  Warnings: 0
+
+4.
+teraz table studenci zawiera tylko plik:
+studenci.frm
+usunelo pozostale pliki.
+
+5.
+mysql> begin;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> update pracownicy set plec='K' where nr_prac =1;
+Query OK, 1 row affected (0.00 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql> update studenci set plec='K' where nr_stud =1;
+Query OK, 1 row affected (0.00 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+6.
+w obu tabelach plec rekortu z nr_stud = 1 to 'K'.
+
+7.
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+8.
+W tabeli pracownicy plec to 'K', a tabeli studenci 'M';
+
+Dla tabeli z silnikiem innoDB zmiany zostaly cofniete. Dla tabeli z MyISAM nie.
+MyISAM nie obs³uguje transakcji.
+
+9.
+mysql> begin;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> update pracownicy set plec='K' where nr_prac =1;
+Query OK, 0 rows affected (0.00 sec)
+Rows matched: 1  Changed: 0  Warnings: 0
+
+mysql> update studenci set plec='K' where nr_stud =1;
+Query OK, 1 row affected (0.00 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+10.
+mysql> alter table studenci engine = memory;
+Query OK, 66 rows affected (0.01 sec)
+Records: 66  Duplicates: 0  Warnings: 0
+
+11.
+mysql> begin;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> update studenci set plec='K' where nr_stud =1;
+Query OK, 0 rows affected (0.00 sec)
+Rows matched: 1  Changed: 0  Warnings: 0
+
+mysql> rollback;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> select * from studenci;
+
+Nie zmienilo wartosci po rollback;
+Memory nie obs³uguje transakcji.
+
+
+13.
+mysql> select * from studenci;
+Empty set (0.00 sec)
+Po restarcie tabela jest pusta bo jej dane byly w pamieci programu.
+
+
+------------ OPTYMALIZACJA ZAPYTAN
+--------ZADANIE 1
+
+115 rows in set (4.98 sec)
+101 rows in set (0.07 sec)
+
+Drugie polecenie wykonuje siê du¿o szybciej bo u¿yto join zamiast iloczynu kartezjañskiego tabel.
+
+4.
+mysql> create index ttt ON casdat (cas);
+Query OK, 4821 rows affected (0.05 sec)
+Records: 4821  Duplicates: 0  Warnings: 0
+
+115 rows in set (0.05 sec)
+101 rows in set (0.12 sec)
+
+Widac znaczn¹ poprawê w pierwszym zapytaniu, bo indeks powoduje porównanie liczb a nie napisów.
+Drugie wykonuje siê podobnie.
+
+6.
+2 rozwiazanie wyswietla mniej wierszy przez uzycie funkcji join które powoduje polaczenie sie niektorych rekordow w jedno.
+Nalezy zmodyfikowac to rozwiazanie. (tak jak w podpunkcie 7.)
+
+7.
+select c1.cas from
+casdat c1 left outer join casdat c2 on c1.cas=c2.cas and c2.type='rent'
+where c1.type='sent'
+group by c1.cas
+having count(distinct c1.data)>count(distinct c2.data);
+
+8.
+115 rows in set (0.14 sec) - z indeksem
+115 rows in set (16.79 sec) - bez indeksu
+
+--ZADANIE 2
+2.
+1 rozwiazanie: czas = bardzo duzy
+2 rozwiazanie Empty set (0.02 sec)
+
+--ZADANIE 3
+1.Empty set (0.08 sec)
+2.Empty set (9.25 sec)
+3. Empty Set (0.0 sec)
+4. Empty Set (0.09 sec)
